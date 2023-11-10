@@ -11,6 +11,10 @@ import time
 from typing import List, Optional, Tuple
 
 
+# store the default model path as ~/.cache/gpt4all/
+# https://docs.gpt4all.io/gpt4all_python.html#api-documentation
+GPT4ALL_MODEL_DIRECTORY = Path.home() / ".cache" / "gpt4all"
+
 class GPT4All(_GPT4All):
     # Switch verbose default to False
     @staticmethod
@@ -108,7 +112,12 @@ class Gpt4AllModel(llm.Model):
             if system:
                 text_prompt = f"{system}\n{text_prompt}"
             response.response_json = {"full_prompt": text_prompt}
-            gpt_model = GPT4All(self.filename())
+
+            # We assume file existing is enough to justify donwload, does not check if file is complete
+            model_name = self.filename()
+            model_exists_locally = Path(GPT4ALL_MODEL_DIRECTORY / model_name).exists()
+            gpt_model = GPT4All(model_name, allow_download=model_exists_locally)
+
             output = gpt_model.generate(text_prompt, max_tokens=400, streaming=True)
             yield from output
 
